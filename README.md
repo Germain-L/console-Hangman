@@ -9,7 +9,7 @@ console hangman app
 ------------------------------
 3: Search if word is available
 ```
-menu will be prompted, selected suitable choice
+menu will be prompted, selecte suitable choice
 
 ### Computer guesses a word
 - How long is your word?
