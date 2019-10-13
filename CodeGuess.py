@@ -1,5 +1,8 @@
 import sqlite3 as lite
-import random
+import random, time
+
+# Set seed so different each time game played
+random.seed(time.time())
 
 conn = lite.connect("word.db")
 c = conn.cursor()
@@ -18,18 +21,48 @@ def game():
     guess = []
     count = 0
     notin = []
+    letters_not_used = []
 
     for i in range(length):
         guess.append("_")
 
     found = False
     while found is False:
-        alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
-                    'u', 'v', 'w', 'x', 'y', 'z']
+        # Weighted alphabet means some letters are more likely to be guessed than others
+        weighted_alphabet = {'a':15 , 'b':1, 'c':1, 'd':1, 'e':15, 'f':1, 'g':1, 'h':1, 'i':15, 'j':1, 'k':1, 'l':1, 'm':1, 'n':1, 'o':15, 'p':1, 'q':1, 'r':1, 's':1, 't':1,
+                    'u':15, 'v':1, 'w':1, 'x':1, 'y':7, 'z':1}
 
+        # Ensure weighted_alphabet doesn't contain any letters already guessed
         for i in notin:
-            if i in alphabet:
-                alphabet.remove(i)
+            if i in weighted_alphabet:
+                del weighted_alphabet[i]
+
+        # Get list of possible words 
+        c.execute("SELECT words FROM words WHERE words LIKE '{}' AND LENGTH(words) = {}".format("".join(guess), len(guess)))
+        possible_words = [i[0] for i in c.fetchall()]
+        temp = possible_words
+        # Eliminate any words containing letters not in the word
+        for i in possible_words:
+            for ii in i:
+                if ii in letters_not_used and ii in temp:
+                    temp.remove(i)
+        possible_words = temp
+        # Make list of possible letters in the word from list of possible words
+        possible_letters = []
+        for i in possible_words:
+            for ii in i:
+                if ii not in possible_letters: possible_letters.append(ii)
+        temp = dict(weighted_alphabet)
+        # Eliminate any letters from alpbabet which are not in possible_letters
+        for i in weighted_alphabet:
+            if i not in possible_letters: del temp[i]
+        weighted_alphabet = dict(temp)
+
+        # Make standard alphabet from weighted_alphabet
+        alphabet = []
+        for i in weighted_alphabet:
+            for ii in range(weighted_alphabet[i]):
+                alphabet.append(i)
         try:
             index = random.randint(0, len(alphabet) -1)
         except ValueError:
@@ -37,7 +70,7 @@ def game():
             break
 
         letter = alphabet[index]
-        alphabet.remove(letter)
+        del weighted_alphabet[letter]
         q = "is '"+ letter+ "' in your word? (y/n)"
         is_in  = input(q)
         if is_in == "y":
@@ -79,6 +112,7 @@ def game():
                         alphabet.append(j)
 
         elif is_in == "n":
+            letters_not_used.append(letter)
             notin.append(letter)
 
         count += 1
