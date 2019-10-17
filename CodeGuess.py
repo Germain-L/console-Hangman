@@ -16,8 +16,10 @@ def verify_word():
     word = input("enter a word to verify: \n")
     c.execute("SELECT * FROM words WHERE words=?",(word,))
     verified = c.fetchall()
-    if verified != "":
-        print(word+"is valid")
+    if len(verified) > 0:
+        print("{} is valid".format(word))
+    else:
+        print("{} is not valid".format(word))
 
 
 def game():
